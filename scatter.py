@@ -17,20 +17,19 @@ monthly_absences = df.groupby(['School DBN', 'Month'])['Absent'].sum().reset_ind
 selected_schools = monthly_absences['School DBN'].unique()[:10]
 filtered_absences = monthly_absences[monthly_absences['School DBN'].isin(selected_schools)]
 
-absence_pivot = filtered_absences.pivot(index='School DBN', columns='Month', values='Absent').fillna(0)
-
 fig, ax = plt.subplots()
-cax = ax.imshow(absence_pivot, aspect='auto', cmap='plasma')
 
-fig.colorbar(cax, ax=ax, label='Total Absences')
-ax.set_title("Monthly Absences of 10 Schools")
+colors = mpl.colormaps.get_cmap('tab10')
+
+for i, school in enumerate(selected_schools):
+    school_data = filtered_absences[filtered_absences['School DBN'] == school]
+    ax.scatter(school_data['Month'].astype(str), school_data['Absent'], label=school, color=colors(i))
+
+ax.set_title("Monthly Absences for 10 Schools")
 ax.set_xlabel("Month")
-ax.set_ylabel("School")
-
-ax.set_xticks(range(len(absence_pivot.columns)))
-ax.set_xticklabels(absence_pivot.columns.astype(str), rotation=45)
-ax.set_yticks(range(len(absence_pivot.index)))
-ax.set_yticklabels(absence_pivot.index)
-
-fig.tight_layout()
+ax.set_ylabel("Total Absences")
+ax.legend(title="School DBN", bbox_to_anchor=(1, 1), loc='upper left')
+plt.xticks(rotation=45)
+plt.grid(True)
+plt.tight_layout()
 plt.show()
