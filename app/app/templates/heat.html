@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="survey">
+    <div class="plot-container">
+        <div id="attendance-plot"></div>
+        <div id="selected-data"></div>
+    </div>
+</div>
+
+
+<script>
+    function initializePlot() {
+    try {
+        {% if plot_json %}
+            var graphs = {{ plot_json | safe }};
+            var myPlot = document.getElementById('attendance-plot');
+            
+            Plotly.newPlot('attendance-plot', graphs.data, graphs.layout)
+                .then(function() {
+                    myPlot.on('plotly_click', function(data) {
+                        var pt = data.points[0];
+                        
+                        // Update info display
+                        var clickData = document.getElementById('selected-data');
+                        clickData.style.display = 'block';
+                        clickData.innerHTML = `
+                            <h3>Selected Cell Details:</h3>
+                            <p><strong>School:</strong> ${pt.y}</p>
+                            <p><strong>Month:</strong> ${pt.x}</p>
+                            <p><strong>Absences:</strong> ${Math.round(pt.z).toLocaleString()}</p>
+                        `;
+                        
+                        // Create selection outline
+                        var update = {
+                            'shapes': [{
+                                type: 'rect',
+                                xref: 'x',
+                                yref: 'y',
+                                x0: pt.x,
+                                y0: pt.y,
+                                x1: pt.x,
+                                y1: pt.y,
+                                line: {
+                                    color: 'red',
+                                    width: 3
+                                }
+                            }]
+                        };
+                        
+                        Plotly.relayout('attendance-plot', update);
+                    });
+                });
+        {% else %}
+            document.getElementById('attendance-plot').innerHTML = 
+                '<p class="error">No attendance data available.</p>';
+        {% endif %}
+    } catch (error) {
+        console.error("Error initializing plot:", error);
+        document.getElementById('attendance-plot').innerHTML = 
+            '<p class="error">Error initializing plot: ' + error.message + '</p>';
+    }
+}
+
+// Initialize plot when Plotly is ready
+if (typeof Plotly !== 'undefined') {
+    initializePlot();
+} else {
+    document.addEventListener('DOMContentLoaded', function() {
+        initializePlot();
+    });
+}
+</script>
+{% endblock %}

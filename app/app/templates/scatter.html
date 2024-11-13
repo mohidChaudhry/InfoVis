@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="survey">
+    <div class="plot-container">
+        <div id="attendance-plot"></div>
+        <div id="selected-data"></div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    try {
+        {% if plot_json %}
+            console.log("Plot JSON is available");
+            var graphs = {{ plot_json | safe }};
+            console.log("Parsed graphs:", graphs);
+            
+            var lastClickedPoint = null;
+            
+            Plotly.newPlot('attendance-plot', graphs.data, graphs.layout)
+                .then(function() {
+                    console.log("Plot successfully created");
+                })
+                .catch(function(err) {
+                    console.error("Error creating plot:", err);
+                });
+            
+            // Handle click events
+            document.getElementById('attendance-plot').on('plotly_click', function(data) {
+                var point = data.points[0];
+                var clickData = document.getElementById('selected-data');
+                
+                // Reset ALL traces to default style first
+                graphs.data.forEach((trace, traceIndex) => {
+                    Plotly.restyle('attendance-plot', {
+                        'marker.line.color': 'white',
+                        'marker.line.width': 2
+                    }, [traceIndex]);
+                });
+                
+                // Then update only the single clicked point
+                var markerColors = Array(graphs.data[point.curveNumber].x.length).fill('white');
+                var markerWidths = Array(graphs.data[point.curveNumber].x.length).fill(2);
+                markerColors[point.pointIndex] = 'red';
+                markerWidths[point.pointIndex] = 4;
+                
+                Plotly.restyle('attendance-plot', {
+                    'marker.line.color': [markerColors],
+                    'marker.line.width': [markerWidths]
+                }, [point.curveNumber]);
+                
+                // Store the current point
+                lastClickedPoint = point;
+                
+                // Log the data for debugging
+                console.log("Clicked point data:", point);
+                console.log("Custom data:", point.customdata);
+                
+                // Update info display with the correct school number
+                clickData.style.display = 'block';
+                clickData.innerHTML = `
+                    <h3>Selected School Details:</h3>
+                    <p><strong>School:</strong> ${point.customdata[0]}</p>
+                    <p><strong>Month:</strong> ${point.x}</p>
+                    <p><strong>Absences:</strong> ${Math.round(point.y).toLocaleString()}</p>
+                `;
+            });
+        {% else %}
+            console.log("No plot JSON available");
+            document.getElementById('attendance-plot').innerHTML = 
+                '<p class="error">Error loading attendance data. Please try again later.</p>';
+        {% endif %}
+    } catch (error) {
+        console.error("Error in plot creation:", error);
+        document.getElementById('attendance-plot').innerHTML = 
+            '<p class="error">Error creating plot: ' + error.message + '</p>';
+    }
+});
+</script>
+{% endblock %}
