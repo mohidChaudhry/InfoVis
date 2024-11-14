@@ -11,28 +11,42 @@ import plotly.graph_objects as go
 import plotly.utils  # Add this import
 import pandas as pd
 import json
+import numpy as np
 
 
-def create_scatter_plot():
-    file_path = os.path.join(app.root_path, '2018-2019_Daily_Attendance_20240429.csv')
+def generate_synthetic_data(num_schools=10, start_date='2023-09', periods=10):
     
-    # Read and process data
-    df = pd.read_csv(file_path)
-    df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
-    df['Month'] = df['Date'].dt.strftime('%Y-%m')
+    # Generate date range
+    dates = pd.date_range(start=start_date, periods=periods, freq='M')
+    months = [date.strftime('%Y-%m') for date in dates]
     
-    monthly_absences = df.groupby(['School Number', 'Month'])['Absent'].sum().reset_index()
-    selected_schools = monthly_absences['School Number'].unique()[:10]
+    # Create empty lists to store data
+    data = []
     
-    filtered_absences = monthly_absences[
-        monthly_absences['School Number'].isin(selected_schools)
-    ].copy()
+    for school in range(1, num_schools + 1):
+        # Generate a base absence rate for each school (between 20 and 50)
+        base_absence_rate = np.random.randint(30, 70)
+        
+        # Generate monthly variations
+        for month in months:
+            # Add some random variation to the base rate (±30%)
+            variation = np.random.uniform(-0.3, 0.3)
+            absences = int(base_absence_rate * (1 + variation))
+            
+            data.append({
+                'School Number': str(school),
+                'Month': month,
+                'Absent': absences
+            })
     
-    # Convert School Number to string
-    filtered_absences['School Number'] = filtered_absences['School Number'].astype(str)
+    return pd.DataFrame(data)
+
+def create_scatter_plot(data=None):
+    if data is None:
+        data = generate_synthetic_data()
     
     # Create figure
-    fig = px.scatter(filtered_absences,
+    fig = px.scatter(data,
                     x='Month',
                     y='Absent',
                     color='School Number',
@@ -40,7 +54,7 @@ def create_scatter_plot():
                     title='Monthly Absences for 10 Schools',
                     labels={'Absent': 'Total Absences', 'Month': 'Month'},
                     height=600,
-                    custom_data=['School Number'])  # Explicitly specify custom_data
+                    custom_data=['School Number'])
     
     # Update layout for better readability
     fig.update_layout(
@@ -68,41 +82,33 @@ def create_scatter_plot():
             symbol='circle',
             opacity=0.8
         ),
-        hovertemplate='School: %{customdata[0]}<br>Month: %{x}<br>Absences: %{y:,.0f}<extra></extra>'
+        hovertemplate=None,
+        hoverinfo='none'
     )
     
-    # Convert to JSON for passing to template
-    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    return graphJSON
+    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-def create_heat_map():
-    # Update this path to match your CSV file location in your project
-    file_path = os.path.join(app.root_path, '2018-2019_Daily_Attendance_20240429.csv')
-        
-    df = pd.read_csv(file_path)
-    df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
-    df['Month'] = df['Date'].dt.strftime('%Y-%m')
-    
-    monthly_absences = df.groupby(['School Number', 'Month'])['Absent'].sum().reset_index()
-    selected_schools = monthly_absences['School Number'].unique()[:10]
-    filtered_absences = monthly_absences[monthly_absences['School Number'].isin(selected_schools)]
+def create_heat_map(data=None):
+    """Create heat map from either provided or generated data"""
+    if data is None:
+        data = generate_synthetic_data()
     
     # Create pivot table
-    absence_pivot = filtered_absences.pivot(
+    absence_pivot = data.pivot(
         index='School Number', 
         columns='Month', 
         values='Absent'
     ).fillna(0)
     
-    # Create figure using px.imshow which handles axes differently
+    # Create figure
     fig = px.imshow(
         absence_pivot,
         labels=dict(x="Month", y="School", color="Total Absences"),
         color_continuous_scale='Plasma',
         aspect='auto'
     )
-
-    y_positions = list(range(1, (len(absence_pivot.index)+1)))
+    
+    y_positions = list(range(len(absence_pivot.index)))
     
     # Update layout
     fig.update_layout(
@@ -113,10 +119,10 @@ def create_heat_map():
         ),
         yaxis=dict(
             tickmode='array',
-            ticktext=list(absence_pivot.index),  # School DBNs
-            tickvals=y_positions,  # Position values starting from 0
+            ticktext=list(absence_pivot.index),
+            tickvals=y_positions,
             side='left',
-            autorange='reversed'  # Keep schools in original order
+            autorange='reversed'
         ),
         margin=dict(t=50, l=200),
         height=600,
@@ -124,11 +130,9 @@ def create_heat_map():
     )
     
     # Disable hover
-    fig.update_traces(hoverinfo='none')
+    fig.update_traces(hoverinfo='none', hovertemplate=None)
     
-    # Convert to JSON for passing to template
-    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    return graphJSON
+    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 # Home page
 @app.route('/', methods=["GET", "POST"])
@@ -160,14 +164,16 @@ def survey(qid):
             if args[0] == str(qid):
                 break
 
+    data = generate_synthetic_data()
+
     if args[1].strip() == "heat":
-        plot_json = create_heat_map()
+        plot_json = create_heat_map(data)
         return render_template(
             "heat.html",
             plot_json=plot_json
         )
     elif args[1].strip() == "scatter":
-        plot_json = create_scatter_plot()
+        plot_json = create_scatter_plot(data)
         return render_template(
             "scatter.html",
             plot_json=plot_json
