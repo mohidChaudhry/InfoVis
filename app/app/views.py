@@ -67,6 +67,7 @@ def create_scatter_plot(data=None):
             x=1.02
         ),
         xaxis=dict(
+            type='category',
             tickangle=45,
             categoryorder='category ascending'
         ),
@@ -92,31 +93,43 @@ def create_heat_map(data=None):
     """Create heat map from either provided or generated data"""
     if data is None:
         data = generate_synthetic_data()
+
     
-    # Create pivot table
+    # Convert School Number to numeric type
+    data['School Number'] = pd.to_numeric(data['School Number'])
+
+    month_order = ['2023-09', '2023-10', '2023-11', '2023-12', '2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06']
+
+    # Create pivot table with sorted index
     absence_pivot = data.pivot(
-        index='School Number', 
-        columns='Month', 
-        values='Absent'
-    ).fillna(0)
+    index='School Number',
+    columns='Month', 
+    values='Absent'
+    )[month_order].sort_index().fillna(0)
     
     # Create figure
     fig = px.imshow(
         absence_pivot,
         labels=dict(x="Month", y="School", color="Total Absences"),
         color_continuous_scale='Plasma',
-        aspect='auto'
+        aspect='auto',
+        x=month_order
     )
     
-    y_positions = list(range(len(absence_pivot.index)))
+    y_positions = list(range(1,11))
     
     # Update layout
     fig.update_layout(
         title='Monthly Absences of 10 Schools',
         xaxis=dict(
+            type='category',
             tickangle=45,
-            side='bottom'
+            side='bottom',
+            ticktext=month_order,
+            tickvals=list(range(len(month_order))),
+            tickmode='array'
         ),
+        
         yaxis=dict(
             tickmode='array',
             ticktext=list(absence_pivot.index),
