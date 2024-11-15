@@ -1,10 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <div class="survey">
     <div class="plot-container">
         <div id="attendance-plot"></div>
-        <div id="selected-data"></div>
+        <form action="/survey/{{ qid_n }}" method="POST">
+            <input type="hidden" id="clicked-data" name="clicked_data">
+            <button type="submit" class="btn btn-primary">Next Question</button>
+        </form>
     </div>
 </div>
 
@@ -50,6 +54,14 @@
                     'marker.line.color': [markerColors],
                     'marker.line.width': [markerWidths]
                 }, [point.curveNumber]);
+
+                document.getElementById('clicked-data').value = JSON.stringify({
+                    x: point.x,
+                    y: point.y,
+                    curveNumber: point.curveNumber,
+                    pointIndex: point.pointIndex,
+                    customdata: point.customdata
+                });
                 
                 // Store the current point
                 lastClickedPoint = point;
@@ -57,15 +69,6 @@
                 // Log the data for debugging
                 console.log("Clicked point data:", point);
                 console.log("Custom data:", point.customdata);
-                
-                // Update info display with the correct school number
-                clickData.style.display = 'block';
-                clickData.innerHTML = `
-                    <h3>Selected School Details:</h3>
-                    <p><strong>School:</strong> ${point.customdata[0]}</p>
-                    <p><strong>Month:</strong> ${point.x}</p>
-                    <p><strong>Absences:</strong> ${Math.round(point.y).toLocaleString()}</p>
-                `;
             });
         {% else %}
             console.log("No plot JSON available");

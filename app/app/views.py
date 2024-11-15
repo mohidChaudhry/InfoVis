@@ -13,7 +13,6 @@ import pandas as pd
 import json
 import numpy as np
 
-
 def generate_synthetic_data(num_schools=10, start_date='2023-09', periods=10):
     
     # Generate date range
@@ -167,27 +166,36 @@ def contact():
     return render_template(
         "contact.html"
     )
-
+data = None
 @app.route('/survey/<int:qid>', methods=["GET", "POST"])
 def survey(qid):
+
+    clicked_data = json.loads(request.form.get('clicked_data', '{}'))
+    print(clicked_data)
+
+    global data
+
     args = []
     with open(os.path.join(app.root_path, 'questions1'), 'r') as file:
         for line in file:
             args = line.split(" ")
             if args[0] == str(qid):
                 break
-
-    data = generate_synthetic_data()
+    
+    if int(args[0])%2 == 1:
+        data = generate_synthetic_data()
 
     if args[1].strip() == "heat":
         plot_json = create_heat_map(data)
         return render_template(
             "heat.html",
+            qid_n = int(qid) + 1,
             plot_json=plot_json
         )
     elif args[1].strip() == "scatter":
         plot_json = create_scatter_plot(data)
         return render_template(
             "scatter.html",
+            qid_n = int(qid) + 1,
             plot_json=plot_json
         )
