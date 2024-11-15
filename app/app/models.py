@@ -1,53 +1,44 @@
 from app import db
-from flask_login import UserMixin
 
-class Users(db.Model, UserMixin):
+class SurveyResponse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True)
-    email = db.Column(db.String, unique=True)
-    fName = db.Column(db.String)
-    lName = db.Column(db.String)
-    pw = db.Column(db.String)
-
-    def __init__(self, email, username, fName, lName, pw):
-        self.username = username
-        self.email = email
-        self.fName = fName
-        self.lName = lName
-        self.pw = pw
-
-
-class Posts(db.Model):
-    postID = db.Column(db.Integer, primary_key=True)
-    caption = db.Column(db.String)
-    path = db.Column(db.String)
-    username = db.Column(db.String)
-    
-    def __init__(self, caption, path, username):
-        self.caption = caption
-        self.path = path
-        self.username = username
-
-
-class Hearts(db.Model):
-    heartID = db.Column(db.Integer, primary_key=True)
-    postID = db.Column(db.Integer)
-    hearted = db.Column(db.Boolean)
-    username = db.Column(db.String)
-    
-    def __init__(self, postID, hearted, username):
-        self.postID = postID
-        self.hearted = hearted
-        self.username = username
-    
-
-class Comments(db.Model):
-    commentID = db.Column(db.Integer, primary_key=True)
-    postID = db.Column(db.Integer)
-    comment = db.Column(db.String)
-    username = db.Column(db.String)
-    
-    def __init__(self, postID, comment, username):
-        self.postID = postID
-        self.comment = comment
-        self.username = username
+    q1_time = db.Column(db.Integer)
+    q1_closeness = db.Column(db.Integer)
+    q2_time = db.Column(db.Integer)
+    q2_closeness = db.Column(db.Integer)
+    q3_time = db.Column(db.Integer)
+    q3_closeness = db.Column(db.Integer)
+    q4_time = db.Column(db.Integer)
+    q4_closeness = db.Column(db.Integer)
+    q5_time = db.Column(db.Integer)
+    q5_closeness = db.Column(db.Integer)
+    q6_time = db.Column(db.Integer)
+    q6_closeness = db.Column(db.Integer)
+    q7_time = db.Column(db.Integer)
+    q7_closeness = db.Column(db.Integer)
+    q8_time = db.Column(db.Integer)
+    q8_closeness = db.Column(db.Integer)
+    q9_time = db.Column(db.Integer)
+    q9_closeness = db.Column(db.Integer)
+    q10_time = db.Column(db.Integer)
+    q10_closeness = db.Column(db.Integer)
+    q11_time = db.Column(db.Integer)
+    q11_closeness = db.Column(db.Integer)
+    q12_time = db.Column(db.Integer)
+    q12_closeness = db.Column(db.Integer)
+    q13_time = db.Column(db.Integer)
+    q13_closeness = db.Column(db.Integer)
+    q14_time = db.Column(db.Integer)
+    q14_closeness = db.Column(db.Integer)
+    q15_time = db.Column(db.Integer)
+    q15_closeness = db.Column(db.Integer)
+    q16_time = db.Column(db.Integer)
+    q16_closeness = db.Column(db.Integer)
+    q17_time = db.Column(db.Integer)
+    q17_closeness = db.Column(db.Integer)
+    q18_time = db.Column(db.Integer)
+    q18_closeness = db.Column(db.Integer)
+    q19_time = db.Column(db.Integer)
+    q19_closeness = db.Column(db.Integer)
+    q20_time = db.Column(db.Integer)
+    q20_closeness = db.Column(db.Integer)

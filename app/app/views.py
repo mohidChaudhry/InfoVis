@@ -6,9 +6,10 @@ from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 import os
 from datetime import datetime
+from app.models import SurveyResponse
 import plotly.express as px
 import plotly.graph_objects as go
-import plotly.utils  # Add this import
+import plotly.utils  
 import pandas as pd
 import json
 import numpy as np
@@ -167,8 +168,36 @@ def contact():
         "contact.html"
     )
 data = None
+
+@app.route('/start_survey', methods=['POST'])
+def start_survey():
+    last_survey = SurveyResponse.query.order_by(SurveyResponse.id.desc()).first()
+    next_id = 1 if not last_survey else last_survey.id + 1
+    
+    new_survey = SurveyResponse()
+    new_survey.id = next_id
+    db.session.add(new_survey)
+    db.session.commit()
+    
+    session['survey_id'] = new_survey.id
+    session['start_time'] = datetime.now().timestamp()
+    return redirect(url_for('survey', qid=1))
+
+
 @app.route('/survey/<int:qid>', methods=["GET", "POST"])
 def survey(qid):
+    if qid == 1 and 'survey_id' not in session:
+        return redirect(url_for('home'))
+    
+    end_time = datetime.now().timestamp()
+    if 'start_time' in session:
+        time_taken = int(end_time - session['start_time'])
+        record = SurveyResponse.query.get(session['survey_id'])
+        if record and qid > 1:
+            setattr(record, f'q{qid-1}_time', time_taken)
+            db.session.commit()
+    
+    session['start_time'] = datetime.now().timestamp()
 
     clicked_data = json.loads(request.form.get('clicked_data', '{}'))
     print(clicked_data)
@@ -199,3 +228,5 @@ def survey(qid):
             qid_n = int(qid) + 1,
             plot_json=plot_json
         )
+        
+        
