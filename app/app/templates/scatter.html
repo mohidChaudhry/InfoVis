@@ -1,17 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <div class="survey">
     <div class="plot-container">
+        <h1>Which month had the most absences?</h1>
         <div id="attendance-plot"></div>
         <form action="/survey/{{ qid_n }}" method="POST">
             <input type="hidden" id="clicked-data" name="clicked_data">
-            <button type="submit" class="btn btn-primary">Next Question</button>
+            <button type="submit" class="btn btn-primary">Save and go next question</button>
         </form>
     </div>
 </div>
-
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -21,7 +20,7 @@
             var graphs = {{ plot_json | safe }};
             console.log("Parsed graphs:", graphs);
             
-            var lastClickedPoint = null;
+            var lastClickedMonth = null;
             
             Plotly.newPlot('attendance-plot', graphs.data, graphs.layout)
                 .then(function() {
@@ -34,7 +33,7 @@
             // Handle click events
             document.getElementById('attendance-plot').on('plotly_click', function(data) {
                 var point = data.points[0];
-                var clickData = document.getElementById('selected-data');
+                var selectedMonth = point.x;
                 
                 // Reset ALL traces to default style first
                 graphs.data.forEach((trace, traceIndex) => {
@@ -44,31 +43,35 @@
                     }, [traceIndex]);
                 });
                 
-                // Then update only the single clicked point
-                var markerColors = Array(graphs.data[point.curveNumber].x.length).fill('white');
-                var markerWidths = Array(graphs.data[point.curveNumber].x.length).fill(2);
-                markerColors[point.pointIndex] = 'red';
-                markerWidths[point.pointIndex] = 4;
-                
-                Plotly.restyle('attendance-plot', {
-                    'marker.line.color': [markerColors],
-                    'marker.line.width': [markerWidths]
-                }, [point.curveNumber]);
+                // Highlight all points in the same month across all traces
+                graphs.data.forEach((trace, traceIndex) => {
+                    var markerColors = Array(trace.x.length).fill('white');
+                    var markerWidths = Array(trace.x.length).fill(2);
+                    
+                    // Find all points in this trace that match the selected month
+                    trace.x.forEach((month, pointIndex) => {
+                        if (month === selectedMonth) {
+                            markerColors[pointIndex] = 'red';
+                            markerWidths[pointIndex] = 3;
+                        }
+                    });
+                    
+                    // Apply the highlighting
+                    Plotly.restyle('attendance-plot', {
+                        'marker.line.color': [markerColors],
+                        'marker.line.width': [markerWidths]
+                    }, [traceIndex]);
+                });
 
+                // Store the clicked data
                 document.getElementById('clicked-data').value = JSON.stringify({
-                    x: point.x,
-                    y: point.y,
-                    curveNumber: point.curveNumber,
-                    pointIndex: point.pointIndex,
-                    customdata: point.customdata
+                    'Month': selectedMonth,  // This is the month value
+                    'Absent': point.y,  // This is the number of absences
+                    'School': point.customdata ? point.customdata[0] : null
                 });
                 
-                // Store the current point
-                lastClickedPoint = point;
-                
                 // Log the data for debugging
-                console.log("Clicked point data:", point);
-                console.log("Custom data:", point.customdata);
+                console.log("Stored click data:", document.getElementById('clicked-data').value);
             });
         {% else %}
             console.log("No plot JSON available");

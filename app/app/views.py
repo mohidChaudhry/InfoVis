@@ -183,26 +183,104 @@ def start_survey():
     session['start_time'] = datetime.now().timestamp()
     return redirect(url_for('survey', qid=1))
 
+def calculate_monthly_totals(data):
+    """Calculate total absences for each month and return sorted months by total absences"""
+    monthly_totals = data.groupby('Month')['Absent'].sum().reset_index()
+    print("\n--- Monthly Totals Before Sorting ---")
+    print(monthly_totals)
+    
+    monthly_totals = monthly_totals.sort_values('Absent', ascending=False)
+    print("\n--- Monthly Totals After Sorting ---")
+    print(monthly_totals)
+    
+    ordered_months = monthly_totals['Month'].tolist()
+    print("\n--- Final Ordered Months (from highest to lowest absences) ---")
+    for i, month in enumerate(ordered_months, 1):
+        print(f"{i}. {month} - {monthly_totals[monthly_totals['Month'] == month]['Absent'].values[0]} absences")
+    
+    return ordered_months
+
+def calculate_closeness(user_answer, correct_order):
+    """Calculate closeness score (1-10) based on answer position"""
+    print("\n--- Calculating Closeness Score ---")
+    print(f"User selected month: {user_answer}")
+    print(f"Correct order of months: {correct_order}")
+    
+    try:
+        position = correct_order.index(user_answer) + 1
+        closeness = min(position, 10)
+        print(f"Position of selected month: {position}")
+        print(f"Closeness score: {closeness}")
+        return closeness
+    except ValueError:
+        print(f"Selected month {user_answer} not found in correct order")
+        return 10
 
 @app.route('/survey/<int:qid>', methods=["GET", "POST"])
 def survey(qid):
     if qid == 1 and 'survey_id' not in session:
         return redirect(url_for('home'))
     
+    global data
+    
     end_time = datetime.now().timestamp()
     if 'start_time' in session:
         time_taken = int(end_time - session['start_time'])
         record = SurveyResponse.query.get(session['survey_id'])
-        if record and qid > 1:
+        if record and qid > 1: 
             setattr(record, f'q{qid-1}_time', time_taken)
-            db.session.commit()
+            
+            try:
+                clicked_data = json.loads(request.form.get('clicked_data', '{}'))
+                print(f"Received clicked data for question {qid-1}: {clicked_data}")
+                
+                if clicked_data and 'Month' in clicked_data:
+                    correct_order = session.get('current_correct_order', [])
+                    print(f"Using correct order for question {qid-1}: {correct_order}")
+                    
+                    user_month = clicked_data['Month']
+                    print(f"User selected month for question {qid-1}: {user_month}")
+                    
+                    closeness = calculate_closeness(user_month, correct_order)
+                    print(f"Calculated closeness score for question {qid-1}: {closeness}")
+                    
+                    setattr(record, f'q{qid-1}_closeness', closeness)
+                else:
+                    print(f"No Month data in clicked_data for question {qid-1}")
+            except json.JSONDecodeError as e:
+                print(f"Error decoding clicked data for question {qid-1}: {e}")
+            except Exception as e:
+                print(f"Error processing clicked data for question {qid-1}: {e}")
+            
+            try:
+                db.session.commit()
+                print(f"Successfully committed question {qid-1} data to database")
+            except Exception as e:
+                print(f"Database error for question {qid-1}: {e}")
+                db.session.rollback()
+    
+    if qid == 21:
+        session.pop('survey_id', None)
+        session.pop('start_time', None)
+        session.pop('current_correct_order', None)
+        return render_template("end.html")
+    
+    if qid % 2 == 1:
+        data = generate_synthetic_data()
+        correct_order = calculate_monthly_totals(data)
+        session['current_correct_order'] = correct_order
+        print(f"Generated new data for questions {qid}&{qid+1}. Correct order: {correct_order}")
+    else:
+        if data is None:
+            print(f"Warning: Data missing for question {qid}, regenerating...")
+            data = generate_synthetic_data()
+            correct_order = calculate_monthly_totals(data)
+            session['current_correct_order'] = correct_order
+            print(f"Regenerated data for question {qid} (fallback). Correct order: {correct_order}")
+        else:
+            print(f"Using existing data for question {qid}")
     
     session['start_time'] = datetime.now().timestamp()
-
-    clicked_data = json.loads(request.form.get('clicked_data', '{}'))
-    print(clicked_data)
-
-    global data
 
     args = []
     with open(os.path.join(app.root_path, 'questions1'), 'r') as file:
@@ -210,9 +288,6 @@ def survey(qid):
             args = line.split(" ")
             if args[0] == str(qid):
                 break
-    
-    if int(args[0])%2 == 1:
-        data = generate_synthetic_data()
 
     if args[1].strip() == "heat":
         plot_json = create_heat_map(data)
@@ -228,5 +303,3 @@ def survey(qid):
             qid_n = int(qid) + 1,
             plot_json=plot_json
         )
-        
-        
