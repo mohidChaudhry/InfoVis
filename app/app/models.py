@@ -42,3 +42,6 @@ class SurveyResponse(db.Model):
     q19_closeness = db.Column(db.Integer)
     q20_time = db.Column(db.Integer)
     q20_closeness = db.Column(db.Integer)
+
+        
+        
