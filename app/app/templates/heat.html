@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="survey">
-    <div class="plot-container">
-        <div id="attendance-plot"></div>
-        <div id="selected-data"></div>
-    </div>
+<div class="plot-container">
+    <div id="attendance-plot"></div>
+    <form action="/survey/{{ qid_n }}" method="POST">
+        <input type="hidden" id="clicked-data" name="clicked_data">
+        <button type="submit" class="btn btn-primary">Next Question</button>
+    </form>
 </div>
-
 
 <script>
     function initializePlot() {
@@ -20,16 +20,13 @@
                 .then(function() {
                     myPlot.on('plotly_click', function(data) {
                         var pt = data.points[0];
+
+                        document.getElementById('clicked-data').value = JSON.stringify({
+                            school: pt.y,
+                            month: pt.x,
+                            absences: Math.round(pt.z)
+                        });
                         
-                        // Update info display
-                        var clickData = document.getElementById('selected-data');
-                        clickData.style.display = 'block';
-                        clickData.innerHTML = `
-                            <h3>Selected Cell Details:</h3>
-                            <p><strong>School:</strong> ${pt.y}</p>
-                            <p><strong>Month:</strong> ${pt.x}</p>
-                            <p><strong>Absences:</strong> ${Math.round(pt.z).toLocaleString()}</p>
-                        `;
                         
                         // Create selection outline
                         var update = {
