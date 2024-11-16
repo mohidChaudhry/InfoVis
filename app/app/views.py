@@ -245,6 +245,11 @@ def survey(qid):
                     print(f"Calculated closeness score for question {qid-1}: {closeness}")
                     
                     setattr(record, f'q{qid-1}_closeness', closeness)
+
+                    if data is not None:
+                        data_dict = data.to_dict(orient='records')
+                        setattr(record, f'q{qid-1}_data', data_dict)
+                        
                 else:
                     print(f"No Month data in clicked_data for question {qid-1}")
             except json.JSONDecodeError as e:

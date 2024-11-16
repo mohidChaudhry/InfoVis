@@ -37,25 +37,24 @@
                                 });
                             }
 
-                            // Get the x-axis range from the layout
-                            var xaxis = graphs.layout.xaxis || {};
-                            var xMin = xaxis.range ? xaxis.range[0] : -0.5;
-                            var xMax = xaxis.range ? xaxis.range[1] : 9.5;  // Assuming 12 months (0-11)
+                            // Calculate rectangle bounds
+                            var xIndex = point.pointNumber[1];  // Column index
+                            var columnX = point.x;  // Month value
                             
                             var update = {
                                 shapes: [{
                                     type: 'rect',
                                     xref: 'x',
                                     yref: 'y',
-                                    x0: xMin,  // Start from the leftmost edge
-                                    y0: point.y - 0.5,
-                                    x1: xMax,  // Extend to the rightmost edge
-                                    y1: point.y + 0.5,
+                                    x0: xIndex - 0.5,  // Start slightly before the column
+                                    x1: xIndex + 0.5,  // End slightly after the column
+                                    y0: 0.5,         // Start at the bottom
+                                    y1: 10.5,          // End at the top (for 10 schools)
                                     line: {
                                         color: 'red',
-                                        width: 3
+                                        width: 2
                                     },
-                                    fillcolor: 'rgba(255, 0, 0, 0.1)'  // Slight red tint
+                                    fillcolor: 'rgba(255, 0, 0, 0.1)'
                                 }]
                             };
                             
