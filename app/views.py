@@ -1,7 +1,5 @@
-from flask import (
-    render_template, flash, request, session, redirect, url_for, jsonify
-)
-from app import app, models, db
+from flask import Blueprint, render_template, flash, request, session, redirect, url_for, jsonify
+from app import models, db
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 import os
@@ -13,6 +11,10 @@ import plotly.utils
 import pandas as pd
 import json
 import numpy as np
+
+
+
+main = Blueprint('main', __name__)
 
 def generate_synthetic_data(num_schools=10, start_date='2023-09', periods=10):
     
@@ -148,28 +150,28 @@ def create_heat_map(data=None):
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 # Home page
-@app.route('/', methods=["GET", "POST"])
+@main.route('/', methods=["GET", "POST"])
 def home():
     return render_template(
         "home.html"
     )
 
 # Information sheet page
-@app.route('/info', methods=["GET", "POST"])
+@main.route('/info', methods=["GET", "POST"])
 def info():
     return render_template(
         "info.html"
     )
 
 # Information sheet page
-@app.route('/contact', methods=["GET", "POST"])
+@main.route('/contact', methods=["GET", "POST"])
 def contact():
     return render_template(
         "contact.html"
     )
 data = None
 
-@app.route('/start_survey', methods=['POST'])
+@main.route('/start_survey', methods=['POST'])
 def start_survey():
     last_survey = SurveyResponse.query.order_by(SurveyResponse.id.desc()).first()
     next_id = 1 if not last_survey else last_survey.id + 1
@@ -216,7 +218,7 @@ def calculate_closeness(user_answer, correct_order):
         print(f"Selected month {user_answer} not found in correct order")
         return 10
 
-@app.route('/survey/<int:qid>', methods=["GET", "POST"])
+@main.route('/survey/<int:qid>', methods=["GET", "POST"])
 def survey(qid):
     if qid == 1 and 'survey_id' not in session:
         return redirect(url_for('home'))
