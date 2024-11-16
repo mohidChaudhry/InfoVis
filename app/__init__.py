@@ -7,14 +7,12 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app():
-    app = Flask(__name__)
-    port = int(os.environ.get("PORT", 5000))
+    app = Flask(__name__, 
+                static_url_path='/static',
+                static_folder='static')
     
-    # Configuration
-    if os.environ.get('RENDER'):
-        app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-    else:
-        app.config.from_object('config')
+    # Load the Config class from config.py
+    app.config.from_object('config.Config')
     
     # Initialize extensions
     db.init_app(app)

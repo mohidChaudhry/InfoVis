@@ -183,7 +183,7 @@ def start_survey():
     
     session['survey_id'] = new_survey.id
     session['start_time'] = datetime.now().timestamp()
-    return redirect(url_for('survey', qid=1))
+    return redirect(url_for('main.survey', qid=1))
 
 def calculate_monthly_totals(data):
     """Calculate total absences for each month and return sorted months by total absences"""
@@ -221,7 +221,7 @@ def calculate_closeness(user_answer, correct_order):
 @main.route('/survey/<int:qid>', methods=["GET", "POST"])
 def survey(qid):
     if qid == 1 and 'survey_id' not in session:
-        return redirect(url_for('home'))
+        return redirect(url_for('main.home'))
     
     global data
     
@@ -290,7 +290,7 @@ def survey(qid):
     session['start_time'] = datetime.now().timestamp()
 
     args = []
-    with open(os.path.join(app.root_path, 'questions1'), 'r') as file:
+    with open(os.path.join(main.root_path, 'questions1'), 'r') as file:
         for line in file:
             args = line.split(" ")
             if args[0] == str(qid):

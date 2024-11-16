@@ -1,7 +1,10 @@
 from app import db
+from datetime import datetime
+
 
 class SurveyResponse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     q1_time = db.Column(db.Integer)
     q1_closeness = db.Column(db.Integer)
     q1_data = db.Column(db.JSON)
@@ -62,6 +65,7 @@ class SurveyResponse(db.Model):
     q20_time = db.Column(db.Integer)
     q20_closeness = db.Column(db.Integer)
     q20_data = db.Column(db.JSON)
+    timestamp2 = db.Column(db.DateTime, default=datetime.utcnow)
 
         
         
