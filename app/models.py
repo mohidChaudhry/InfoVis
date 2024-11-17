@@ -3,6 +3,8 @@ from datetime import datetime
 
 
 class SurveyResponse(db.Model):
+    __tablename__ = 'survey_response'
+    
     id = db.Column(db.Integer, primary_key=True)
     group_number = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
