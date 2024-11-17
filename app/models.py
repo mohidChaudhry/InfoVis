@@ -4,6 +4,7 @@ from datetime import datetime
 
 class SurveyResponse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    group_number = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     q1_time = db.Column(db.Integer)
     q1_closeness = db.Column(db.Integer)
